@@ -1,126 +1,82 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { getCurrentUser, signOut } from '@/lib/auth';
-import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import NotificationSystem from '@/components/NotificationSystem';
 
-export const dynamic = 'force-dynamic';
-
 export default function CandidateDashboard() {
-  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
-  const [profile, setProfile] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadDashboard();
   }, []);
 
-  async function loadData() {
-    const user = await getCurrentUser();
-    if (!user) { router.push('/login'); return; }
-
-    const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    setProfile(profileData);
-
-    const { data: candProfile } = await supabase.from('candidate_profiles').select('id').eq('user_id', user.id).single();
-    if (!candProfile) return;
-
-    const { data: matchData } = await supabase.from('matches').select('*, jobs(*)').eq('candidate_id', candProfile.id).order('match_score', { ascending: false }).limit(10);
-    setMatches(matchData || []);
-
-    const { data: appData } = await supabase.from('applications').select('*, jobs(title)').eq('candidate_id', candProfile.id).order('created_at', { ascending: false });
-    setApplications(appData || []);
+  async function loadDashboard() {
+    const user = getCurrentUser();
+    setUser(user);
+    setProfile({ id: 'demo-profile' });
+    setMatches([]);
+    setApplications([]);
   }
 
   async function handleSignOut() {
     await signOut();
-    router.push('/');
+    router.push('/login');
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7F7F7' }}>
-      <header style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '16px 24px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#89CFF0', margin: 0 }}>WeAreJobPilot</h1>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <NotificationSystem />
-            <span>Hallo, {profile?.full_name || 'Gebruiker'}</span>
-            <button onClick={handleSignOut} style={{ padding: '8px 16px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Uitloggen</button>
+    <div className="min-h-screen bg-gray-50">
+      <NotificationSystem />
+      
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">Candidate Dashboard</h1>
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Uitloggen
+            </button>
           </div>
         </div>
       </header>
 
-      <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '40px' }}>
-          <div style={{ background: 'white', padding: '24px', borderRadius: '12px', textAlign: 'center' }}>
-            <p style={{ fontSize: '36px', fontWeight: 'bold', color: '#89CFF0', margin: 0 }}>{matches.length}</p>
-            <p style={{ color: '#6B7280', margin: '8px 0 0 0' }}>AI Matches</p>
-          </div>
-          <div style={{ background: 'white', padding: '24px', borderRadius: '12px', textAlign: 'center' }}>
-            <p style={{ fontSize: '36px', fontWeight: 'bold', color: '#10B981', margin: 0 }}>{applications.length}</p>
-            <p style={{ color: '#6B7280', margin: '8px 0 0 0' }}>Sollicitaties</p>
-          </div>
-          <div style={{ background: 'white', padding: '24px', borderRadius: '12px', textAlign: 'center' }}>
-            <p style={{ fontSize: '36px', fontWeight: 'bold', color: '#F59E0B', margin: 0 }}>0</p>
-            <p style={{ color: '#6B7280', margin: '8px 0 0 0' }}>Opgeslagen</p>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
-          <div>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>Jouw AI Matches</h2>
-            {matches.length === 0 ? (
-              <div style={{ background: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center' }}>
-                <p style={{ color: '#6B7280' }}>Nog geen matches. Voltooi je profiel voor betere matches!</p>
-                <a href="/dashboard/candidate/profile" style={{ display: 'inline-block', marginTop: '16px', padding: '10px 20px', background: '#89CFF0', color: 'white', borderRadius: '6px', textDecoration: 'none' }}>Profiel aanvullen</a>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {matches.map((match: any) => (
-                  <div key={match.id} style={{ background: 'white', padding: '20px', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                      <div style={{ flex: 1 }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px' }}>{match.jobs.title}</h3>
-                        <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '12px' }}>{match.jobs.description.slice(0, 150)}...</p>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <span style={{ fontSize: '14px', fontWeight: '600', color: '#10B981' }}>Match: {match.match_score}%</span>
-                          <span style={{ fontSize: '12px', color: '#9CA3AF' }}>•</span>
-                          <span style={{ fontSize: '12px', color: '#6B7280' }}>{match.jobs.location}</span>
-                        </div>
-                      </div>
-                      <a href={`/jobs/${match.jobs.id}`} style={{ padding: '8px 16px', background: '#89CFF0', color: 'white', borderRadius: '6px', textDecoration: 'none', fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap' }}>Bekijk →</a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>Quick Actions</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <a href="/dashboard/candidate/cv" style={{ background: 'white', padding: '16px', borderRadius: '8px', textDecoration: 'none', color: '#1F2937', fontWeight: '600', display: 'block', border: '1px solid #E5E7EB' }}>
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">AI Features</h2>
+            <div className="space-y-3">
+              <a href="/dashboard/candidate/cv" className="block p-3 bg-blue-50 rounded-lg hover:bg-blue-100">
                 📄 CV Cleanup
               </a>
-              <a href="/dashboard/candidate/cover-letter" style={{ background: 'white', padding: '16px', borderRadius: '8px', textDecoration: 'none', color: '#1F2937', fontWeight: '600', display: 'block', border: '1px solid #E5E7EB' }}>
-                ✍️ Cover Letter Generator
+              <a href="/dashboard/candidate/cover-letter" className="block p-3 bg-green-50 rounded-lg hover:bg-green-100">
+                ✉️ Cover Letter
               </a>
-              <a href="/dashboard/candidate/job-summary" style={{ background: 'white', padding: '16px', borderRadius: '8px', textDecoration: 'none', color: '#1F2937', fontWeight: '600', display: 'block', border: '1px solid #E5E7EB' }}>
+              <a href="/dashboard/candidate/job-summary" className="block p-3 bg-purple-50 rounded-lg hover:bg-purple-100">
                 📋 Job Summary
               </a>
-              <a href="/dashboard/candidate/ai-buddy" style={{ background: 'white', padding: '16px', borderRadius: '8px', textDecoration: 'none', color: '#1F2937', fontWeight: '600', display: 'block', border: '1px solid #E5E7EB' }}>
+              <a href="/dashboard/candidate/ai-buddy" className="block p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100">
                 🤖 AI Job Hunter
-              </a>
-              <a href="/dashboard/candidate/referrals" style={{ background: 'white', padding: '16px', borderRadius: '8px', textDecoration: 'none', color: '#1F2937', fontWeight: '600', display: 'block', border: '1px solid #E5E7EB' }}>
-                👥 Referrals
               </a>
             </div>
           </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">Job Matches</h2>
+            <p className="text-gray-600">AI zoekt naar perfecte matches...</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">Applications</h2>
+            <p className="text-gray-600">Geen recente sollicitaties</p>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

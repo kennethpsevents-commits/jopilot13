@@ -85,3 +85,5 @@ fs.writeFileSync(outputPath, JSON.stringify(allJobs, null, 2));
 console.log(`\nJobs saved to: ${outputPath}`);
 console.log('✅ Seed script completed successfully!');
 
+
+

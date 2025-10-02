@@ -3,79 +3,68 @@ import { useState } from 'react';
 import { signIn } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
-export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function Login() {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
     try {
-      await signIn(email, password);
+      await signIn(formData.email, formData.password);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login failed');
-    } finally {
-      setLoading(false);
     }
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F7F7' }}>
-      <div style={{ maxWidth: '400px', width: '100%', padding: '40px', background: 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '8px', color: '#89CFF0' }}>Inloggen</h1>
-        <p style={{ color: '#6B7280', marginBottom: '24px' }}>Welkom terug bij WeAreJobPilot</p>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="max-w-md w-full bg-white rounded-lg shadow p-6">
+        <h1 className="text-2xl font-bold text-center mb-6">Inloggen</h1>
         
-        {error && (
-          <div style={{ background: '#FEE2E2', color: '#DC2626', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>E-mail</label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
               required
-              style={{ width: '100%', padding: '10px', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '14px' }}
             />
           </div>
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Wachtwoord</label>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Wachtwoord</label>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
               required
-              style={{ width: '100%', padding: '10px', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '14px' }}
             />
           </div>
-
+          
+          {error && (
+            <div className="text-red-600 text-sm">{error}</div>
+          )}
+          
           <button
             type="submit"
-            disabled={loading}
-            style={{ width: '100%', padding: '12px', background: '#89CFF0', color: 'white', border: 'none', borderRadius: '6px', fontSize: '16px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
           >
-            {loading ? 'Inloggen...' : 'Inloggen'}
+            Inloggen
           </button>
         </form>
-
-        <p style={{ marginTop: '24px', textAlign: 'center', fontSize: '14px', color: '#6B7280' }}>
-          Nog geen account?{' '}
-          <a href="/register" style={{ color: '#89CFF0', fontWeight: '600', textDecoration: 'none' }}>
-            Registreer hier
-          </a>
+        
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Geen account? <a href="/register" className="text-blue-600 hover:underline">Aanmelden</a>
         </p>
       </div>
     </div>
